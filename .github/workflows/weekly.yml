@@ -1,0 +1,177 @@
+name: BioMed News Weekly Push
+
+on:
+  # 定时触发：周四+周日 北京时间08:00 = UTC 00:00（前一天）
+  schedule:
+    - cron: '0 0 * * 4'   # 周四北京时间08:00
+    - cron: '0 0 * * 0'   # 周日北京时间08:00
+  
+  # 手动触发（用于测试）
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: '测试模式（仅抓取不推送）'
+        required: false
+        default: 'false'
+        type: boolean
+      generate_podcast:
+        description: '生成播客音频'
+        required: false
+        default: 'true'
+        type: boolean
+
+# 添加权限
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+      
+      - name: Install Python dependencies
+        run: |
+          pip install feedparser requests openai edge-tts pydub
+      
+      - name: Run BioMed News Push
+        run: |
+          if [ "${{ inputs.test_mode }}" = "true" ]; then
+            python main.py --test
+          else
+            python main.py
+          fi
+        env:
+          DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY }}
+      
+      - name: Generate Podcast
+        if: ${{ inputs.generate_podcast != 'false' }}
+        run: |
+          python main.py --podcast --no-summary
+        env:
+          DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY }}
+      
+      - name: Upload report artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-report
+          path: reports/
+          retention-days: 14
+      
+      - name: Upload podcast artifact
+        if: success() && inputs.generate_podcast != 'false'
+        uses: actions/upload-artifact@v4
+        with:
+          name: podcast
+          path: podcasts/*.mp3
+          retention-days: 30
+          if-no-files-found: ignore
+
+  # 部署到GitHub Pages
+  deploy-pages:
+    needs: build
+    runs-on: ubuntu-latest
+    if: ${{ inputs.generate_podcast != 'false' }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Download podcast artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: podcast
+          path: podcasts/
+        continue-on-error: true
+      
+      - name: Check if podcast exists
+        id: check_podcast
+        run: |
+          if [ -d "podcasts" ] && [ "$(ls -A podcasts/*.mp3 2>/dev/null)" ]; then
+            echo "has_podcast=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_podcast=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Generate podcast RSS
+        if: steps.check_podcast.outputs.has_podcast == 'true'
+        run: |
+          python -c "
+          import os
+          from datetime import datetime
+          from pathlib import Path
+
+          podcasts_dir = Path('podcasts')
+          mp3_files = list(podcasts_dir.glob('*.mp3'))
+          
+          if not mp3_files:
+              print('No podcast files found')
+              exit(0)
+          
+          # 获取最新的MP3文件
+          latest_mp3 = max(mp3_files, key=lambda f: f.stat().st_mtime)
+          file_size = latest_mp3.stat().st_size
+          
+          # 生成RSS
+          today = datetime.now().strftime('%Y年%m月%d日')
+          base_url = 'https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}'
+          audio_url = f'{base_url}/podcasts/{latest_mp3.name}'
+          
+          rss_content = f'''<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+          <rss version=\"2.0\" xmlns:itunes=\"http://www.itunes.com/dtds/podcast-1.0.dtd\">
+          <channel>
+              <title>生物医疗科技周刊</title>
+              <link>{base_url}</link>
+              <language>zh-CN</language>
+              <author>BioMed编辑部</author>
+              <description>每周精选生物医药、新医疗技术热点，双人对话播报</description>
+              <itunes:author>BioMed编辑部</itunes:author>
+              <itunes:summary>每周精选生物医药、新医疗技术热点，双人对话播报</itunes:summary>
+              <itunes:category text=\"Science\"/>
+              <itunes:explicit>false</itunes:explicit>
+              
+              <item>
+                  <title>生物医疗科技周刊 - {today}</title>
+                  <description>每周生物医药新闻精选，双人对话播报</description>
+                  <pubDate>{datetime.now().strftime('%a, %d %b %Y %H:%M:%S +0800')}</pubDate>
+                  <enclosure url=\"{audio_url}\" length=\"{file_size}\" type=\"audio/mpeg\"/>
+                  <itunes:duration>5:00</itunes:duration>
+              </item>
+          </channel>
+          </rss>'''
+          
+          with open('podcast.xml', 'w', encoding='utf-8') as f:
+              f.write(rss_content)
+          
+          print(f'Generated RSS for: {latest_mp3.name}')
+          print(f'Audio URL: {audio_url}')
+          "
+      
+      - name: Deploy to GitHub Pages
+        if: steps.check_podcast.outputs.has_podcast == 'true'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .
+          publish_branch: gh-pages
+          force_orphan: true
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: 'Update podcast - ${{ github.run_number }}'
