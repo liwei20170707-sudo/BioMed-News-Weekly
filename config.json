@@ -12,7 +12,7 @@
     {"name": "ScienceDaily生物学", "url": "https://rsshub.app/sciencedaily/biology", "max_items": 5}
   ],
   "push": {
-    "serverchan_key": "SCT325378T2knp9EXAJ2lNuqecF1nix7AE",
+    "serverchan_key": "",
     "dingtalk_webhook": "https://oapi.dingtalk.com/robot/send?access_token=477dbcd07a4a70e2e2b75bfea6d264b32a6b0c294f2176538899553605b5954f",
     "emails": ["liwei0@huawei.com", "david_lw2012@126.com"]
   },
