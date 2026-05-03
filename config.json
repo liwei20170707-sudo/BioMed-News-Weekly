@@ -1,0 +1,28 @@
+{
+  "feeds": [
+    {"name": "China CDC Weekly", "url": "https://weekly.chinacdc.cn/rss/current.xml", "max_items": 5},
+    {"name": "北京大学学报医学版", "url": "http://xuebao.bjmu.edu.cn/CN/rss_lm_5_1671-167X.xml", "max_items": 5},
+    {"name": "现代药物与临床", "url": "http://www.tiprpress.com/rss/", "max_items": 4},
+    {"name": "中国心血管病研究", "url": "http://xxgzz.ijournals.cn/rss/", "max_items": 4}
+  ],
+  "feeds_backup": [
+    {"name": "PubMed最新论文", "url": "https://rsshub.app/pubmed/recent", "max_items": 6},
+    {"name": "FDA新闻", "url": "https://rsshub.app/fda/news", "max_items": 5},
+    {"name": "Nature中文精选", "url": "https://rsshub.app/nature/chinese", "max_items": 5},
+    {"name": "ScienceDaily生物学", "url": "https://rsshub.app/sciencedaily/biology", "max_items": 5}
+  ],
+  "push": {
+    "serverchan_key": "",
+    "dingtalk_webhook": "https://oapi.dingtalk.com/robot/send?access_token=477dbcd07a4a70e2e2b75bfea6d264b32a6b0c294f2176538899553605b5954f",
+    "emails": ["liwei0@huawei.com", "david_lw2012@126.com"]
+  },
+  "dashscope": {
+    "api_key": "${DASHSCOPE_API_KEY}",
+    "model": "qwen-turbo",
+    "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1"
+  },
+  "schedule": {
+    "days": ["Thursday", "Sunday"],
+    "push_time": "08:00"
+  }
+}

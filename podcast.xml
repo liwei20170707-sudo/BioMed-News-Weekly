@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd">
+<channel>
+    <title>生物医疗科技周刊</title>
+    <link>https://liwei20170707-sudo.github.io/BioMed-News-Weekly</link>
+    <language>zh-CN</language>
+    <author>BioMed编辑部</author>
+    <description>每周精选生物医药、新医疗技术热点，双人对话播报</description>
+    <itunes:author>BioMed编辑部</itunes:author>
+    <itunes:summary>每周精选生物医药、新医疗技术热点，双人对话播报</itunes:summary>
+    <itunes:category text="Science"/>
+    <itunes:explicit>false</itunes:explicit>
+    
+    <item>
+        <title>生物医疗科技周刊 - 2026年05月03日</title>
+        <description>每周生物医药新闻精选，双人对话播报</description>
+        <pubDate>Sun, 03 May 2026 03:47:34 +0800</pubDate>
+        <enclosure url="https://liwei20170707-sudo.github.io/BioMed-News-Weekly/podcasts/AI科技早报_20260503.mp3" length="1218184" type="audio/mpeg"/>
+        <itunes:duration>5:00</itunes:duration>
+    </item>
+</channel>
+</rss>
